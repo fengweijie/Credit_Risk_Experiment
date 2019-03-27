@@ -1,0 +1,153 @@
+[toc]
+# 德国信用风险数据分析
+## 1 课题背景
+&nbsp;&nbsp;&nbsp;&nbsp;银行信用风险的大小和质量决定着银行盈利水平的高低，对银行证券稳定、长远的发展有着至关重要的影响，银行使用数据挖掘方法建立目的明确、层次分明的信用风险分析模型有着重要价值。
+
+&nbsp;&nbsp;&nbsp;&nbsp;早期的信用风险研究寻求数学解决方法，Z分数模型等都是比较具有代表性的方法。随着银行信贷的大规模增长及客户信用信息的迅速变化，形成了复杂的数据资源，信用风险的形式与日俱增。因此，Hashemi and Blanc、Guilherme Barreto Fernandes、謝宇等分别采用神经网络和粗糙集成分集合、logistic模型作为解释变量、改进BP人工神经网络模型对银行信用风险进行预测得到了较好改进。但以上的方法在预测精度和准确性上还有待提高。
+
+&nbsp;&nbsp;&nbsp;&nbsp;本文结合<华泰证券人工智能系列,人工智能选股函数的改进>
+引入XGBoost（eXtreme Gradient Boosting)算法建立信用风险分析优化模型，基于UCI上德国信用数据集与决策树、GBDT、支持向量机等模型进行对比分析，验证了改进后的xgboost损失函数应用于信用风险分析具有更好的性能。
+
+## 2 数据维度分析
+### 数据集描述
+数据集包含1000条观测，每个观测有20个categorial(类别型，可重编码为numeric)或symbolic(符号型)属性。每条观测代表某人在银行开卡的记录，并且每条观测根据其属性值被打上了good或bad信用风险的标签。
+### 数据集内容
+原数据集内容比较复杂,整理出来的特征字段包括
+
+
+字段名称 | 字段类型 | 字段描述
+---|--- | ----
+Age | numeric|
+Sex | text    | male, female
+Job | numeric | 0 - unskilled and non-resident,1 - unskilled and resident, 2 - skilled, 3 - highly skilled
+Housing | text | own, rent, or free)
+Saving accounts | text |  little, moderate, quite rich, rich
+Checking account | numeric  | in  DM - Deutsch Mark
+Credit amount | numeric | in DM
+Duration | numeric|  in month
+Purpose| text | car, furniture/equipment, radio/TV, domestic appliances, repairs, education,business, vacation/
+target |  text |- Good or Bad Risk
+
+## 3 探索性分析
+### 3.1 信用样本正负比例图
+图[1]数据样本正负比例,可以看到数据中,正样本的比例韦70%,负样本比例韦30%
+![image](https://note.youdao.com/yws/api/personal/file/WEB34198429cc3fa30fcdf36e42896f3864?method=download&shareKey=8a143a562046c1cde31e0b234e131465)
+
+### 3.2 信用样本与年龄分布图
+图[2]信用样本与年龄分布图,可以看到真负样本的各个年龄段的统计情况,可以看到样本中,数据年龄段区间集中在20到40岁.在信用良好的的年龄区间中,27岁信用良好占比最高,占比10.57%,在信用不良的年龄区间中,25-29岁之间的不良占比最高,占比25.33%
+在所有样本空间中,年龄区间跨越0到70岁,其中27岁样本最高,占比10.1%,70岁样本最低,占比1%.
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB98067828080ee7dbfeb6b68c1ae627af?method=download&shareKey=c77d75df5808e99b27ccd48a0c95f330)
+
+### 3.3 年龄区间与存款关系图
+[图片详情页](https://plot.ly/~fengweijie/1/#plot) 
+
+将样本按照如下区间进行切分
+年龄段 | 范围
+---|---
+student | 0~18
+young | 18~25
+Adult | 25~35
+Senior| 35~60
+
+
+图[3] 画出年龄与存款之间的箱状图
+年龄段 | 信用状况 | min | 下四分位数|中位数|上四分位数|max|平均值|四分位区间|
+---|---|---|---|---|---|---|---|---|
+student |good |
+student |bad |
+young | good |
+young | bad |
+Adult | good |
+Adult | bad |
+Senior| good |
+Senior| bad |
+
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB30aaf5133756948798da0b989c5debc3?method=download&shareKey=944a77d8090d4ee41f2926478f50e06e)
+
+
+### 3.4 信用与housing的关系
+[原图片链接](https://plot.ly/~fengweijie/9/)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBe5cbbaa608b5f4dda251c7e4a660f5f8?method=download&shareKey=af420cb6463386b6b8f9af80e03681fb)
+
+
+
+### 3.5 信用和housing以及存款之间的关系
+[链接](https://plot.ly/~fengweijie/11/)
+![image](https://note.youdao.com/yws/api/personal/file/WEB91ebfd19c05e1b6714fb6aeda4745940?method=download&shareKey=cb412db2a3e22e2000e49d8f8602d371)
+
+
+
+
+### 3.6 信用与性别之间的关系
+[链接](https://plot.ly/~fengweijie/13/)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBc3957a3b7a6ee350946c670f437839c1?method=download&shareKey=f103c91097e123c5b6fa371eb82207e9)
+
+
+
+### 3.7 信用与工作之间的关系
+
+[链接](https://plot.ly/~fengweijie/15/)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB5e8dd084c1b44043667b3d1e089c7b96?method=download&shareKey=69a91ac69c54c28dcb3807af9f42873b)
+
+
+[链接](https://plot.ly/~fengweijie/17/)
+![image](https://note.youdao.com/yws/api/personal/file/WEB3e93d9be84e496da29f8ead1faafe85d?method=download&shareKey=424ad5cc505b1b42aed04531b0c84606)
+
+### 3.8 信用跟年龄和工作之间的关系
+[链接](https://plot.ly/~fengweijie/19/)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBae6b2057d70c9fa7cf2916261f5f30e1?method=download&shareKey=0a0873e40c649192e4f4dec15d2d69b4)
+
+
+### 3.9 信用和银行存款之间的关系
+[链接](https://plot.ly/~fengweijie/21/)
+![image](https://note.youdao.com/yws/api/personal/file/WEB63ecd8b92ab56272c90f011bc987a75d?method=download&shareKey=6888ba18f1c2bf7947922299f6aee596)
+
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB9546a169eb861b82f2bfaf5850070e83?method=download&shareKey=54e4e37c4408b2e9dfd728966f222be2)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB9926bea9dfd6cd633d6c69f13454ead3?method=download&shareKey=83a2bb0e6ca74ef023a54ac29c5d88c2)
+
+
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB4a5349ccca0bf205600a0e5c4476a6f6?method=download&shareKey=f5c1f4480edfa2dc54643d99cdc7ca3c)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBcba11f20be8dd903c9049a7fb14666c0?method=download&shareKey=fb2e19b5923d479ae93394a16d766774)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBee76520bdfe725e0e122c77d8b688a34?method=download&shareKey=75b447a14504ac27eb588481b4af81d6)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB52658a45478541d0c0a5f18a9e2a216c?method=download&shareKey=e1c93ff8383c6ee6355136f5b476f459)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEBc1fc4e2923fa71c10bf90b7470d34d1b?method=download&shareKey=89c6a77d26653a85ecf4877a6c89f052)
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB5bbe1828c285dabc3874445dbce5568d?method=download&shareKey=075a574efda2c9396b684050c249e199)
+
+
+![image](https://note.youdao.com/yws/api/personal/file/WEB5b1efc84bde2549e841a290736a2ac38?method=download&shareKey=54c6be2dedfa1e7803c8cf71d5d20552)
+
+## 4 模型
+
+### 4.1 xgboost 
+xgboost 官方文档 https://xgboost.readthedocs.io/en/latest/
+GBDT（Gradient Boosting Decision Tree）是一种基于迭代所构造的决策树算法，它又可以简称为MART（Multiple Additive Regression Tree）或GBRT（Gradient Boosting Regression Tree）。虽然名字上又是Gradient又是Boosting的，但它的原理还是很浅显易懂（当然详细的推导还是有一些难度）。简单来讲，这种算法在实际问题中将生成多棵决策树，并将所有树的结果进行汇总来得到最终答案.
+
+### 4.2 xgboost和其他算法对比
+
+
+### 4.3 改进损失函数后的xgboost
+#### 4.3.1 加权损失函数
+
+
+
+#### 4.3.1 广义损失函数
+
+
+## 5 总结
+
+
+## 6 参考文献
